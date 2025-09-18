@@ -14,3 +14,13 @@ codeavatar:
   ratelimiter:
     dailyBucket:
       prefix: bucket:daily
+  abuse-detection:
+    ip:
+      prefix: bucket:burst:ip
+      interval: SECONDS
+      request-count: 5
+    user:
+      prefix: bucket:burst:user
+      interval: SECONDS
+      request-count: 1
+

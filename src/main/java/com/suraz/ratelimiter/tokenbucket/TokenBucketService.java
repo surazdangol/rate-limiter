@@ -1,8 +1,7 @@
 package com.suraz.ratelimiter.tokenbucket;
 
-import com.suraz.ratelimiter.tier.Tier;
+import java.time.Duration;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -12,22 +11,19 @@ public class TokenBucketService {
 
   private final RedisTemplate<String, TokenBucket> redisTemplate;
 
-
-  public TokenBucketService(
-      RedisTemplate<String, TokenBucket> redisTemplate) {
+  public TokenBucketService(RedisTemplate<String, TokenBucket> redisTemplate) {
     this.redisTemplate = redisTemplate;
   }
 
-
-
-  public boolean isTokenAvailable(String key, Tier tier) {
+  public boolean isTokenAvailable(String key, TokenPolicy policy) {
     TokenBucket bucket = redisTemplate.opsForValue().get(key);
     if (Objects.isNull(bucket)) {
-      bucket = new TokenBucket(tier.dailyLimit().get(), System.currentTimeMillis());
+      bucket = new TokenBucket(policy.limit(), System.currentTimeMillis());
+      redisTemplate.opsForValue().set(key, bucket, policy.ttl());
     }
 
-    if (isRefillRequired(bucket)) {
-      refill(bucket, tier);
+    if (isRefillRequired(bucket, policy.ttl())) {
+      refill(bucket, policy.limit());
     }
 
     boolean hasToken = bucket.getTokenCount() > 0;
@@ -35,24 +31,20 @@ public class TokenBucketService {
       bucket.removeToken();
       redisTemplate.opsForValue().set(key, bucket);
     }
-    return  hasToken;
+    return hasToken;
   }
 
-  private boolean isRefillRequired(TokenBucket bucket) {
+  private boolean isRefillRequired(TokenBucket bucket, Duration expiryDuration) {
     if (Objects.isNull(bucket)) {
       return true;
     }
 
     return (System.currentTimeMillis() - bucket.getLastRefillTimeInMillis())
-        > TimeUnit.DAYS.toMillis(1);
+        > expiryDuration.toMillis();
   }
 
-  private void refill(TokenBucket bucket, Tier tier) {
+  private void refill(TokenBucket bucket, Integer limit) {
 
-    tier.dailyLimit()
-        .ifPresent(
-            (max) -> {
-              bucket.addTokens(max - bucket.getTokenCount());
-            });
+    bucket.addTokens(limit - bucket.getTokenCount());
   }
 }

@@ -3,11 +3,9 @@ package com.suraz.ratelimiter.tokenbucket;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.suraz.ratelimiter.tier.Tier;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -54,7 +52,10 @@ public class TokenBucketServiceTest {
 
       @Test
       public void testReturnsTrue() {
-        assertTrue(cut.isTokenAvailable(key, tier));
+        assertTrue(
+            cut.isTokenAvailable(
+                key,
+                TokenPolicy.of(tier.dailyLimit().get(), Duration.ofDays(1))));
       }
     }
 
@@ -77,7 +78,11 @@ public class TokenBucketServiceTest {
 
           @Test
           public void testReturnsTrue() {
-            Assertions.assertTrue(cut.isTokenAvailable(key, tier));
+            Assertions.assertTrue(
+                cut.isTokenAvailable(
+                    key,
+                    TokenPolicy.of(
+                        tier.dailyLimit().get(), Duration.ofDays(1))));
           }
         }
 
@@ -86,8 +91,14 @@ public class TokenBucketServiceTest {
 
           @Test
           public void testReturnsFalse() {
-            cut.isTokenAvailable(key, tier);
-            Assertions.assertFalse(cut.isTokenAvailable(key, tier));
+            cut.isTokenAvailable(
+                key,
+                TokenPolicy.of(tier.dailyLimit().get(), Duration.ofDays(1)));
+            Assertions.assertFalse(
+                cut.isTokenAvailable(
+                    key,
+                    TokenPolicy.of(
+                        tier.dailyLimit().get(), Duration.ofDays(1))));
           }
         }
       }
@@ -106,7 +117,10 @@ public class TokenBucketServiceTest {
 
         @Test
         public void testReturnsFalse() {
-          Assertions.assertFalse(cut.isTokenAvailable(key, tier));
+          Assertions.assertFalse(
+              cut.isTokenAvailable(
+                  key,
+                  TokenPolicy.of(tier.dailyLimit().get(), Duration.ofDays(1))));
         }
       }
 
@@ -121,7 +135,10 @@ public class TokenBucketServiceTest {
 
         @Test
         public void testReturnsTrue() {
-          Assertions.assertTrue(cut.isTokenAvailable(key, tier));
+          Assertions.assertTrue(
+              cut.isTokenAvailable(
+                  key,
+                  TokenPolicy.of(tier.dailyLimit().get(), Duration.ofDays(1))));
         }
       }
     }
